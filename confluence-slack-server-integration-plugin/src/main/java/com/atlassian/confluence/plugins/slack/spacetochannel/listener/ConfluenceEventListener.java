@@ -25,6 +25,7 @@ import com.github.seratch.jslack.api.methods.request.chat.ChatPostMessageRequest
 import com.github.seratch.jslack.api.methods.request.chat.ChatPostMessageRequest.ChatPostMessageRequestBuilder;
 import com.github.seratch.jslack.api.model.block.SectionBlock;
 import com.github.seratch.jslack.api.model.block.composition.MarkdownTextObject;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -33,6 +34,7 @@ import java.util.Optional;
 
 import static java.util.Collections.singletonList;
 
+@Slf4j
 @Component
 public class ConfluenceEventListener extends AutoSubscribingEventListener {
     private final SlackContentPermissionChecker permissionChecker;
@@ -56,6 +58,8 @@ public class ConfluenceEventListener extends AutoSubscribingEventListener {
     @EventListener
     public void pageCreateEvent(final PageCreateEvent event) {
         if (event.isSuppressNotifications()) {
+            log.debug("Skipping processing <{}> page creation because user has chosen to suppress notifications",
+                    event.getPage().getTitle());
             return;
         }
         createAbstractPageEventIfNotRestricted(event.getPage(), EventType.CREATE, PageType.PAGE)
@@ -65,6 +69,8 @@ public class ConfluenceEventListener extends AutoSubscribingEventListener {
     @EventListener
     public void pageUpdateEvent(final PageUpdateEvent event) {
         if (event.isSuppressNotifications()) {
+            log.debug("Skipping processing <{}> page update because user has chosen to suppress notifications",
+                    event.getPage().getTitle());
             return;
         }
         createAbstractPageEventIfNotRestricted(event.getPage(), EventType.UPDATE, PageType.PAGE)
@@ -74,6 +80,8 @@ public class ConfluenceEventListener extends AutoSubscribingEventListener {
     @EventListener
     public void blogPostCreateEvent(final BlogPostCreateEvent event) {
         if (event.isSuppressNotifications()) {
+            log.debug("Skipping processing <{}> blog post creation because user has chosen to suppress notifications",
+                    event.getBlogPost().getTitle());
             return;
         }
         createAbstractPageEventIfNotRestricted(event.getBlogPost(), EventType.CREATE, PageType.BLOG)
@@ -83,6 +91,8 @@ public class ConfluenceEventListener extends AutoSubscribingEventListener {
     @EventListener
     public void blogPostCreateEvent(final BlogPostUpdateEvent event) {
         if (event.isSuppressNotifications()) {
+            log.debug("Skipping processing <{}> blog post update because user has chosen to suppress notifications",
+                    event.getBlogPost().getTitle());
             return;
         }
         createAbstractPageEventIfNotRestricted(event.getBlogPost(), EventType.UPDATE, PageType.BLOG)
@@ -92,6 +102,8 @@ public class ConfluenceEventListener extends AutoSubscribingEventListener {
     @EventListener
     public void commentCreated(final CommentCreateEvent event) {
         if (event.isSuppressNotifications()) {
+            log.debug("Skipping processing comment creation on the page <{}> because user has chosen to suppress notifications",
+                    event.getContent().getTitle());
             return;
         }
         final ContentEntityObject content = event.getComment().getContainer();
