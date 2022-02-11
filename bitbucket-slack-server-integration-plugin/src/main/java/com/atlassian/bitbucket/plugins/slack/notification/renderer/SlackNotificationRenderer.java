@@ -59,6 +59,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 import static com.atlassian.plugins.slack.util.SlackHelper.escapeSignsForSlackLink;
 import static com.google.common.collect.Lists.newArrayList;
@@ -317,13 +318,10 @@ public class SlackNotificationRenderer {
     }
 
     public ChatPostMessageRequestBuilder getReviewersPullRequestMessage(
-            final PullRequestReviewersUpdatedEvent event,
-            final boolean isVerbose) {
-        final PullRequest pullRequest = event.getPullRequest();
+            final boolean isVerbose, PullRequest pullRequest, ApplicationUser actor, Set<ApplicationUser> setAddedReviewers) {
         final PullRequestRef toRef = pullRequest.getToRef();
         final Repository repository = toRef.getRepository();
-        final ApplicationUser actor = event.getUser();
-        final Collection<ApplicationUser> addedReviewers = ObjectUtils.firstNonNull(event.getAddedReviewers(), emptyList());
+        final Collection<ApplicationUser> addedReviewers = ObjectUtils.firstNonNull(setAddedReviewers, emptyList());
         final boolean isOneUserAdded = addedReviewers.size() == 1;
 
         final String suffix = isOneUserAdded ? "joined" : "removed";

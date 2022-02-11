@@ -524,7 +524,7 @@ public class SlackNotificationRendererTest {
         when(pullRequestReviewersUpdatedEvent.getUser()).thenReturn(user);
         when(pullRequestReviewersUpdatedEvent.getAddedReviewers()).thenReturn(Collections.singleton(user));
 
-        ChatPostMessageRequest result = renderer.getReviewersPullRequestMessage(pullRequestReviewersUpdatedEvent, true).build();
+        ChatPostMessageRequest result = renderer.getReviewersPullRequestMessage(true, pullRequestReviewersUpdatedEvent.getPullRequest(), pullRequestReviewersUpdatedEvent.getUser(), pullRequestReviewersUpdatedEvent.getAddedReviewers()).build();
 
         assertMessage(result, join("slack.activity.pr.reviewers.joined.long", USER_SLACK_LINK, PR_SLACK_LINK, REPO_SLACK_LINK,
                 PR_FROM_BRANCH_LINK, PR_TO_BRANCH_LINK));
@@ -536,7 +536,7 @@ public class SlackNotificationRendererTest {
         when(pullRequestReviewersUpdatedEvent.getUser()).thenReturn(user);
         when(pullRequestReviewersUpdatedEvent.getRemovedReviewers()).thenReturn(Collections.singleton(user));
 
-        ChatPostMessageRequest result = renderer.getReviewersPullRequestMessage(pullRequestReviewersUpdatedEvent, false).build();
+        ChatPostMessageRequest result = renderer.getReviewersPullRequestMessage(false, pullRequestReviewersUpdatedEvent.getPullRequest(), pullRequestReviewersUpdatedEvent.getUser(), pullRequestReviewersUpdatedEvent.getAddedReviewers()).build();
 
         assertMessage(result, join("slack.activity.pr.reviewers.removed.short", USER_SLACK_LINK, PR_SLACK_LINK, REPO_SLACK_LINK,
                 PR_FROM_BRANCH_LINK, PR_TO_BRANCH_LINK));

@@ -256,7 +256,7 @@ class BitbucketNotificationEventListenerTest {
 
         captor.getValue().apply(extendedOptions);
         if (reviewers) {
-            verify(slackNotificationRenderer).getReviewersPullRequestMessage((PullRequestReviewersUpdatedEvent) event, true);
+            verify(slackNotificationRenderer).getReviewersPullRequestMessage(true, event.getPullRequest(), event.getUser(), ((PullRequestReviewersUpdatedEvent) event).getAddedReviewers());
         } else {
             verify(slackNotificationRenderer).getPullRequestMessage(event);
         }
