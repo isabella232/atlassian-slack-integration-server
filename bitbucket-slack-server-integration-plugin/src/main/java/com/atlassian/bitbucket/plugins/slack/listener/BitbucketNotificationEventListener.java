@@ -93,6 +93,8 @@ public class BitbucketNotificationEventListener {
     @EventListener
     public void onEvent(final PullRequestEvent event) {
         PullRequestNotificationTypes.byEvent(event, i18nResolver).ifPresent(notificationType -> {
+            final boolean isReviewersUpdate = event instanceof PullRequestReviewersUpdatedEvent;
+            final boolean hasUserAddedOrRemovedHimself = isReviewersUpdate && hasUserAddedOrRemovedHimself((PullRequestReviewersUpdatedEvent) event);
             notificationPublisher.findChannelsAndPublishNotificationsAsync(
                     event.getPullRequest().getToRef().getRepository(),
                     notificationType.getKey(),
@@ -102,35 +104,26 @@ public class BitbucketNotificationEventListener {
                             getUsersAddedToPullRequest(event),
                             false),
                     options -> {
-                        final boolean isReviewersUpdate = (event instanceof PullRequestOpenedEvent && !event.getPullRequest().getReviewers().isEmpty()) ||
-                                event instanceof PullRequestReviewersUpdatedEvent;
                         if (isReviewersUpdate) {
-                            Set<ApplicationUser> addedReviewers;
-                            Set<ApplicationUser> removedReviewers;
-                            if (event instanceof PullRequestOpenedEvent) {
-                                addedReviewers = participantsToApplicationUser(event.getPullRequest().getReviewers());
-                                removedReviewers = Collections.emptySet();
-                            } else {
-                                PullRequestReviewersUpdatedEvent reviewersUpdatedEvent = (PullRequestReviewersUpdatedEvent) event;
-                                addedReviewers = reviewersUpdatedEvent.getAddedReviewers();
-                                removedReviewers = reviewersUpdatedEvent.getRemovedReviewers();
-                            }
-                            final boolean hasUserAddedOrRemovedHimself = hasUserAddedOrRemovedHimself(event.getUser(),
-                                    addedReviewers, removedReviewers);
                             if (hasUserAddedOrRemovedHimself || options.isPersonal()) {
-                                for (ApplicationUser user : addedReviewers) {
-                                    return ofNullable(slackNotificationRenderer.getReviewersPullRequestMessage(
-                                            Verbosity.EXTENDED.equals(options.getVerbosity()), event.getPullRequest(), user, addedReviewers));
-                                }
+                                return ofNullable(slackNotificationRenderer.getReviewersPullRequestMessage(
+                                        (PullRequestReviewersUpdatedEvent) event,
+                                        Verbosity.EXTENDED.equals(options.getVerbosity())));
                             }
                             return empty();
+                        }
+                        if (event instanceof PullRequestOpenedEvent && options.isPersonal()) {
+                            return ofNullable(slackNotificationRenderer.iAmAddedAsReviewerMessage(
+                                    (PullRequestOpenedEvent) event,
+                                    getUsersAddedToPullRequest(event).size() > 0,
+                                    Verbosity.EXTENDED.equals(options.getVerbosity())));
                         }
                         return ofNullable(slackNotificationRenderer.getPullRequestMessage(event));
                     });
         });
     }
 
-    private Set<ApplicationUser> participantsToApplicationUser(Set<PullRequestParticipant> participants) {
+    private Set<ApplicationUser> participantsToApplicationUsers(Set<PullRequestParticipant> participants) {
         return participants.stream()
                 .map(PullRequestParticipant::getUser)
                 .collect(Collectors.toSet());
@@ -139,14 +132,18 @@ public class BitbucketNotificationEventListener {
     private Set<ApplicationUser> getUsersAddedToPullRequest(final PullRequestEvent event) {
         if (event instanceof PullRequestOpenedEvent) {
             final PullRequestOpenedEvent e = (PullRequestOpenedEvent) event;
-            return participantsToApplicationUser(e.getPullRequest().getReviewers());
+            return participantsToApplicationUsers(e.getPullRequest().getReviewers());
+        } else if (event instanceof PullRequestReviewersUpdatedEvent) {
+            final PullRequestReviewersUpdatedEvent e = (PullRequestReviewersUpdatedEvent) event;
+            return e.getAddedReviewers();
         }
         return Collections.emptySet();
     }
 
-    private boolean hasUserAddedOrRemovedHimself(ApplicationUser actor, Set<ApplicationUser> setAddedReviewers, Set<ApplicationUser> setRemovedReviewers) {
-        final Collection<ApplicationUser> addedReviewers = firstNonNull(setAddedReviewers, emptyList());
-        final Collection<ApplicationUser> removedReviewers = firstNonNull(setRemovedReviewers, emptyList());
+    private boolean hasUserAddedOrRemovedHimself(final PullRequestReviewersUpdatedEvent event) {
+        final ApplicationUser actor = event.getUser();
+        final Collection<ApplicationUser> addedReviewers = firstNonNull(event.getAddedReviewers(), emptyList());
+        final Collection<ApplicationUser> removedReviewers = firstNonNull(event.getRemovedReviewers(), emptyList());
         final boolean isOneUserAdded = addedReviewers.size() == 1;
         final boolean isOneUserRemoved = removedReviewers.size() == 1;
 

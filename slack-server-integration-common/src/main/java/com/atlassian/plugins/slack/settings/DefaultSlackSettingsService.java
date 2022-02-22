@@ -74,12 +74,14 @@ public class DefaultSlackSettingsService implements SlackSettingService {
     @Override
     public List<ConversationKey> getMutedChannelIds() {
         try {
-            List<String> conversationKeyStr = toStringList();
             List<ConversationKey> conversationKeyList = new ArrayList<>();
-            for (String convKey : conversationKeyStr) {
-                conversationKeyList.add(ConversationKey.fromStringKey(convKey));
+            if (toStringList() != null) {
+                List<String> conversationKeyStr = toStringList();
+                for (String convKey : conversationKeyStr) {
+                    conversationKeyList.add(ConversationKey.fromStringKey(convKey));
+                }
             }
-            return conversationKeyList != null ? conversationKeyList : Collections.emptyList();
+            return !conversationKeyList.isEmpty() ? conversationKeyList : Collections.emptyList();
         } catch (Throwable e) {
             log.debug("Could not get muted channels list", e);
             return Collections.emptyList();

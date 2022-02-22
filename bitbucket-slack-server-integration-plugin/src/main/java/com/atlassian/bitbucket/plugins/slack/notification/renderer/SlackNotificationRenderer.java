@@ -318,17 +318,37 @@ public class SlackNotificationRenderer {
     }
 
     public ChatPostMessageRequestBuilder getReviewersPullRequestMessage(
-            final boolean isVerbose, PullRequest pullRequest, ApplicationUser actor, Set<ApplicationUser> setAddedReviewers) {
+            final PullRequestReviewersUpdatedEvent event,
+            final boolean isVerbose) {
+        final PullRequest pullRequest = event.getPullRequest();
         final PullRequestRef toRef = pullRequest.getToRef();
         final Repository repository = toRef.getRepository();
-        final Collection<ApplicationUser> addedReviewers = ObjectUtils.firstNonNull(setAddedReviewers, emptyList());
+        final Collection<ApplicationUser> addedReviewers = ObjectUtils.firstNonNull(event.getAddedReviewers(), emptyList());
         final boolean isOneUserAdded = addedReviewers.size() == 1;
-
         final String suffix = isOneUserAdded ? "joined" : "removed";
         final String verboseSuffix = isVerbose ? ".long" : ".short";
         final String text = i18nResolver.getText(
                 "slack.activity.pr.reviewers." + suffix + verboseSuffix,
-                slackLinkRenderer.userLink(actor),
+                "You",
+                slackLinkRenderer.pullRequestLink(pullRequest),
+                slackLinkRenderer.repoLink(repository),
+                slackLinkRenderer.refLink(repository, pullRequest.getFromRef()),
+                slackLinkRenderer.refLink(repository, toRef));
+
+        return standardBlockMessage(text);
+    }
+
+    public ChatPostMessageRequestBuilder iAmAddedAsReviewerMessage(final PullRequestOpenedEvent event,
+                                                                   final boolean isOneReviewerAdded,
+                                                                   final boolean isVerbose) {
+        final PullRequest pullRequest = event.getPullRequest();
+        final PullRequestRef toRef = pullRequest.getToRef();
+        final Repository repository = toRef.getRepository();
+        final String suffix = isOneReviewerAdded ? "joined" : "removed";
+        final String verboseSuffix = isVerbose ? ".long" : ".short";
+        final String text = i18nResolver.getText(
+                "slack.activity.pr.reviewers." + suffix + verboseSuffix,
+                "You",
                 slackLinkRenderer.pullRequestLink(pullRequest),
                 slackLinkRenderer.repoLink(repository),
                 slackLinkRenderer.refLink(repository, pullRequest.getFromRef()),

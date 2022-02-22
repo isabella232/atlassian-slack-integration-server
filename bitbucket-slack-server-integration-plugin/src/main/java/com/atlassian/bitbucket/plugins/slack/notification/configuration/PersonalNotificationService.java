@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 import static com.atlassian.bitbucket.plugins.slack.notification.BitbucketPersonalNotificationTypes.COMMIT_AUTHOR_COMMENT;
@@ -163,7 +164,7 @@ public class PersonalNotificationService {
                         notificationTeamId,
                         user.getSlackUserId(),
                         null,
-                        true), type.name().toLowerCase()))
+                        true), type.name().toLowerCase(), Optional.of(applicationUser.getId())))
                 .ifPresent(info -> userMap.put(applicationUser.getId(), info));
     }
 
